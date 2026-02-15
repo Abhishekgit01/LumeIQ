@@ -1,0 +1,231 @@
+'use client';
+
+import { useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  ShoppingBag, Search, Star, Heart, ChevronRight, Tag, Leaf, Zap,
+  TrendingUp, ArrowDownLeft, PiggyBank, Gift, ChevronLeft, Copy, Lock,
+  QrCode, Check, Wallet, Receipt, BadgePercent, Building2,
+  Sparkles, ShieldCheck, CreditCard, Filter, SlidersHorizontal, Bike,
+  Droplets, Recycle, Sun, TreePine, ShoppingCart, Award, Flame, Eye,
+    Camera, Upload, ScanLine, CheckCircle2, XCircle, Loader2, X, Minus, Plus,
+} from 'lucide-react';
+import { useStore } from '@/store/useStore';
+import { CameraCapture } from '@/components/ui/CameraCapture';
+
+/* ═══════════════════════════════════════════════════════
+   MARKETPLACE TAB TYPE
+   ═══════════════════════════════════════════════════════ */
+type MarketTab = 'shop' | 'finance';
+
+/* ═══════════════════════════════════════════════════════
+   ECO PRODUCT CATEGORIES
+   ═══════════════════════════════════════════════════════ */
+const CATEGORIES = [
+  { id: 'all', label: 'All', emoji: '🌍', color: '#34c759' },
+  { id: 'food', label: 'Food', emoji: '🥗', color: '#4cd964' },
+  { id: 'fashion', label: 'Fashion', emoji: '👕', color: '#5856d6' },
+  { id: 'home', label: 'Home', emoji: '🏠', color: '#ff9f0a' },
+  { id: 'transport', label: 'Transport', emoji: '🚲', color: '#007aff' },
+  { id: 'energy', label: 'Energy', emoji: '☀️', color: '#ffcc00' },
+  { id: 'beauty', label: 'Beauty', emoji: '🌿', color: '#af52de' },
+];
+
+/* ═══════════════════════════════════════════════════════
+   ECO PRODUCTS
+   ═══════════════════════════════════════════════════════ */
+const ECO_PRODUCTS = [
+  // Food
+  { id: 'p1', name: 'Organic Meal Kit', brand: 'GreenChef', price: 499, mrp: 699, category: 'food', rating: 4.6, reviews: 342, co2Saved: '1.2kg', ecoPoints: 15, emoji: '🥗', badge: 'BESTSELLER', badgeColor: '#ff453a', gradient: 'linear-gradient(135deg, #0d9f4f 0%, #0a7a3b 100%)' },
+  { id: 'p2', name: 'Plant-Based Protein', brand: 'EcoNutrition', price: 899, mrp: 1199, category: 'food', rating: 4.8, reviews: 128, co2Saved: '3.5kg', ecoPoints: 25, emoji: '💪', badge: 'ECO PICK', badgeColor: '#34c759', gradient: 'linear-gradient(135deg, #2d8f4e 0%, #1a6b35 100%)' },
+  { id: 'p3', name: 'Zero-Waste Snack Box', brand: 'NakedSnacks', price: 349, mrp: 449, category: 'food', rating: 4.4, reviews: 87, co2Saved: '0.8kg', ecoPoints: 10, emoji: '🍿', badge: null, badgeColor: '', gradient: 'linear-gradient(135deg, #3d7a2e 0%, #2a5a1f 100%)' },
+
+  // Fashion
+  { id: 'p4', name: 'Recycled Denim Jacket', brand: 'ReThread', price: 1899, mrp: 2999, category: 'fashion', rating: 4.7, reviews: 215, co2Saved: '5.2kg', ecoPoints: 35, emoji: '🧥', badge: 'TRENDING', badgeColor: '#007aff', gradient: 'linear-gradient(135deg, #4a3a8a 0%, #322870 100%)' },
+  { id: 'p5', name: 'Bamboo Fiber Tee', brand: 'EcoWear', price: 599, mrp: 899, category: 'fashion', rating: 4.5, reviews: 456, co2Saved: '2.1kg', ecoPoints: 18, emoji: '👕', badge: 'POPULAR', badgeColor: '#ff9f0a', gradient: 'linear-gradient(135deg, #5856d6 0%, #3634a3 100%)' },
+  { id: 'p6', name: 'Upcycled Sneakers', brand: 'GreenStep', price: 2499, mrp: 3499, category: 'fashion', rating: 4.9, reviews: 89, co2Saved: '4.8kg', ecoPoints: 30, emoji: '👟', badge: 'NEW', badgeColor: '#007aff', gradient: 'linear-gradient(135deg, #6b4fa0 0%, #4a3680 100%)' },
+
+  // Home
+  { id: 'p7', name: 'Beeswax Wrap Set', brand: 'WrapGreen', price: 299, mrp: 449, category: 'home', rating: 4.3, reviews: 678, co2Saved: '1.5kg', ecoPoints: 12, emoji: '🐝', badge: 'BESTSELLER', badgeColor: '#ff453a', gradient: 'linear-gradient(135deg, #c77d0a 0%, #9a6108 100%)' },
+  { id: 'p8', name: 'Compost Bin Kit', brand: 'EarthCycle', price: 1299, mrp: 1799, category: 'home', rating: 4.6, reviews: 234, co2Saved: '8.0kg', ecoPoints: 40, emoji: '♻️', badge: 'HIGH IMPACT', badgeColor: '#34c759', gradient: 'linear-gradient(135deg, #8a6a1a 0%, #6b520f 100%)' },
+  { id: 'p9', name: 'Solar Lantern', brand: 'SunPower', price: 799, mrp: 1099, category: 'home', rating: 4.7, reviews: 156, co2Saved: '6.0kg', ecoPoints: 28, emoji: '🔆', badge: null, badgeColor: '', gradient: 'linear-gradient(135deg, #d4a017 0%, #b8860b 100%)' },
+
+  // Transport
+  { id: 'p10', name: 'Bamboo Bike Basket', brand: 'CycleGreen', price: 699, mrp: 999, category: 'transport', rating: 4.4, reviews: 98, co2Saved: '0.5kg', ecoPoints: 8, emoji: '🧺', badge: null, badgeColor: '', gradient: 'linear-gradient(135deg, #007aff 0%, #0055d4 100%)' },
+  { id: 'p11', name: 'E-Scooter Rental Pass', brand: 'GreenRide', price: 999, mrp: 1499, category: 'transport', rating: 4.8, reviews: 567, co2Saved: '12.0kg', ecoPoints: 50, emoji: '🛴', badge: 'TOP RATED', badgeColor: '#ff453a', gradient: 'linear-gradient(135deg, #0066cc 0%, #004499 100%)' },
+
+  // Energy
+  { id: 'p12', name: 'Portable Solar Charger', brand: 'SunJuice', price: 1499, mrp: 2199, category: 'energy', rating: 4.6, reviews: 312, co2Saved: '15.0kg', ecoPoints: 45, emoji: '🔋', badge: 'ECO PICK', badgeColor: '#34c759', gradient: 'linear-gradient(135deg, #e6a817 0%, #c99212 100%)' },
+  { id: 'p13', name: 'LED Smart Bulb Set', brand: 'BrightEco', price: 599, mrp: 899, category: 'energy', rating: 4.5, reviews: 890, co2Saved: '20.0kg', ecoPoints: 35, emoji: '💡', badge: 'BESTSELLER', badgeColor: '#ff453a', gradient: 'linear-gradient(135deg, #d4a017 0%, #b08a10 100%)' },
+
+  // Beauty
+  { id: 'p14', name: 'Shampoo Bar Bundle', brand: 'BarNone', price: 399, mrp: 599, category: 'beauty', rating: 4.7, reviews: 445, co2Saved: '2.0kg', ecoPoints: 14, emoji: '🧴', badge: 'POPULAR', badgeColor: '#ff9f0a', gradient: 'linear-gradient(135deg, #af52de 0%, #8e44ad 100%)' },
+  { id: 'p15', name: 'Organic Skincare Set', brand: 'PureEarth', price: 1299, mrp: 1899, category: 'beauty', rating: 4.8, reviews: 267, co2Saved: '3.0kg', ecoPoints: 22, emoji: '🌸', badge: 'NEW', badgeColor: '#007aff', gradient: 'linear-gradient(135deg, #c062e6 0%, #9b4cc0 100%)' },
+];
+
+/* ═══════════════════════════════════════════════════════
+   FEATURED COLLECTIONS
+   ═══════════════════════════════════════════════════════ */
+const FEATURED_COLLECTIONS = [
+  { id: 'c1', title: 'Zero Waste\nStarter Kit', subtitle: 'Save 4.5kg CO\u2082', emoji: '♻️', gradient: 'linear-gradient(135deg, #0d9f4f 0%, #067a35 100%)', badge: 'LUMEIQ', products: 4, points: 45 },
+  { id: 'c2', title: 'Sustainable\nFashion Edit', subtitle: '5 days eco-fashion', emoji: '👗', gradient: 'linear-gradient(135deg, #5856d6 0%, #3634a3 100%)', badge: 'LUMEIQ', products: 6, points: 60 },
+  { id: 'c3', title: 'Green Home\nEssentials', subtitle: 'Transform your space', emoji: '🏡', gradient: 'linear-gradient(135deg, #ff9f0a 0%, #e68600 100%)', badge: 'LUMEIQ', products: 8, points: 55 },
+  { id: 'c4', title: 'Plant-Based\nMeal Prep', subtitle: 'Weekly meal kit', emoji: '🥬', gradient: 'linear-gradient(135deg, #34c759 0%, #248a3d 100%)', badge: 'LUMEIQ', products: 3, points: 30 },
+];
+
+/* ═══════════════════════════════════════════════════════
+   REWARD COUPONS (from Finance)
+   ═══════════════════════════════════════════════════════ */
+const COUPONS = [
+  { id: 'eco10', title: '10% off eco products', partner: 'GreenMart', emoji: '🛒', code: 'ECO10', expires: '1 Apr 2026', iqRequired: 0, gradient: 'linear-gradient(135deg, #1b6b3a 0%, #0d4a25 100%)' },
+  { id: 'metro5', title: '5% cashback on transport', partner: 'MetroPass', emoji: '🚇', code: 'METRO5', expires: '15 Apr 2026', iqRequired: 0, gradient: 'linear-gradient(135deg, #1a4a7a 0%, #0d2e52 100%)' },
+  { id: 'tree', title: 'Tree planting voucher', partner: 'GreenEarth', emoji: '🌳', code: 'TREE2026', expires: '1 May 2026', iqRequired: 60, gradient: 'linear-gradient(135deg, #4a3a1a 0%, #2e250d 100%)' },
+  { id: 'solar', title: '15% off solar accessories', partner: 'SunPower', emoji: '\u2600\uFE0F', code: 'SOLAR15', expires: '30 Jun 2026', iqRequired: 75, gradient: 'linear-gradient(135deg, #7a4a1a 0%, #523210 100%)' },
+];
+
+const TRANSACTIONS = [
+  { id: 1, title: 'Eco Meal Kit Purchase', amount: -499, type: 'debit' as const, date: '15 Feb', icon: '🥗', category: 'Marketplace', points: 15 },
+  { id: 2, title: 'Marketplace Cashback', amount: 50, type: 'credit' as const, date: '14 Feb', icon: '💰', category: 'Rewards', points: 0 },
+  { id: 3, title: 'Bamboo Tee Purchase', amount: -599, type: 'debit' as const, date: '13 Feb', icon: '👕', category: 'Marketplace', points: 18 },
+  { id: 4, title: 'Eco Points Bonus', amount: 100, type: 'credit' as const, date: '12 Feb', icon: '🏆', category: 'Rewards', points: 0 },
+  { id: 5, title: 'Solar Charger Purchase', amount: -1499, type: 'debit' as const, date: '11 Feb', icon: '🔋', category: 'Marketplace', points: 45 },
+  { id: 6, title: 'Referral Reward', amount: 200, type: 'credit' as const, date: '10 Feb', icon: '🎁', category: 'Rewards', points: 0 },
+  { id: 7, title: 'Recycling Verified', amount: 75, type: 'credit' as const, date: '9 Feb', icon: '♻️', category: 'Verified', points: 10 },
+];
+
+const SAVINGS_GOALS = [
+  { id: 'solar', name: 'Solar Panel Fund', target: 50000, current: 12500, icon: '\u2600\uFE0F', color: '#ff9f0a' },
+  { id: 'ev', name: 'EV Down Payment', target: 200000, current: 45000, icon: '\u26A1', color: '#5856d6' },
+  { id: 'garden', name: 'Rooftop Garden', target: 15000, current: 9800, icon: '🌱', color: '#34c759' },
+];
+
+/* ═══════════════════════════════════════════════════════
+   VISION API VERIFICATION
+   ═══════════════════════════════════════════════════════ */
+interface VerifyResult {
+  verified: boolean;
+  label: string;
+  confidence: number;
+  pointsEarned: number;
+}
+
+async function verifyEcoPurchase(imageBase64: string): Promise<VerifyResult> {
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_CLOUD_VISION_API_KEY;
+  if (!apiKey) return { verified: false, label: 'API key missing. Set NEXT_PUBLIC_GOOGLE_CLOUD_VISION_API_KEY in .env', confidence: 0, pointsEarned: 0 };
+
+  try {
+    const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requests: [{
+          image: { content: imageBase64 },
+          features: [
+            { type: 'LABEL_DETECTION', maxResults: 15 },
+            { type: 'OBJECT_LOCALIZATION', maxResults: 10 },
+            { type: 'TEXT_DETECTION', maxResults: 5 },
+          ],
+        }],
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error('Vision API error:', res.status, errText);
+      if (res.status === 403) {
+        return { verified: false, label: 'Cloud Vision API not enabled. Enable it at console.cloud.google.com > APIs & Services > Enable Cloud Vision API', confidence: 0, pointsEarned: 0 };
+      }
+      if (res.status === 401) {
+        return { verified: false, label: 'Invalid API key. Check NEXT_PUBLIC_GOOGLE_CLOUD_VISION_API_KEY', confidence: 0, pointsEarned: 0 };
+      }
+      return { verified: false, label: `API error (${res.status})`, confidence: 0, pointsEarned: 0 };
+    }
+
+    const data = await res.json();
+    const resp = data.responses?.[0];
+
+    if (resp?.error) {
+      return { verified: false, label: resp.error.message || 'Vision API returned an error', confidence: 0, pointsEarned: 0 };
+    }
+
+    const labels = (resp?.labelAnnotations || []).map((l: { description: string; score: number }) => ({
+      name: l.description.toLowerCase(),
+      score: l.score,
+    }));
+    const objects = (resp?.localizedObjectAnnotations || []).map((o: { name: string; score: number }) => ({
+      name: o.name.toLowerCase(),
+      score: o.score,
+    }));
+    const textContent = (resp?.textAnnotations?.[0]?.description || '').toLowerCase();
+
+    const allItems = [...labels, ...objects];
+
+    // Eco keywords
+    const ecoKeywords = [
+      'organic', 'eco', 'sustainable', 'recycled', 'plant', 'green', 'natural',
+      'bamboo', 'compost', 'solar', 'reusable', 'biodegradable', 'vegan',
+      'fair trade', 'upcycled', 'zero waste', 'renewable', 'bicycle', 'electric',
+      'produce', 'vegetable', 'fruit', 'salad', 'herb', 'grocery', 'food',
+      'clothing', 'textile', 'bottle', 'bag', 'container', 'packaging',
+    ];
+
+    const matched = allItems.filter(i => ecoKeywords.some(k => i.name.includes(k)));
+    const textMatched = ecoKeywords.some(k => textContent.includes(k));
+
+    if (matched.length > 0 || textMatched) {
+      const topMatch = matched.length > 0 ? matched[0] : { name: 'eco-product', score: 0.7 };
+      const points = Math.round(10 + topMatch.score * 25);
+      return { verified: true, label: topMatch.name, confidence: topMatch.score, pointsEarned: points };
+    }
+
+    return { verified: false, label: allItems[0]?.name || 'unknown', confidence: allItems[0]?.score || 0, pointsEarned: 0 };
+  } catch (err: any) {
+    console.error('Vision API call failed:', err);
+    return { verified: false, label: `Network error: ${err.message || 'Check internet connection'}`, confidence: 0, pointsEarned: 0 };
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   MARKETPLACE VIEW COMPONENT
+   ═══════════════════════════════════════════════════════ */
+export function MarketplaceView() {
+  const { user } = useStore();
+  const [activeTab, setActiveTab] = useState<MarketTab>('shop');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [cart, setCart] = useState<Map<string, number>>(new Map());
+
+  // Finance sub-tab state
+  const [couponIdx, setCouponIdx] = useState(0);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [txFilter, setTxFilter] = useState<'all' | 'credit' | 'debit'>('all');
+
+  // Quick action modals
+  const [showPayModal, setShowPayModal] = useState(false);
+  const [showBillsModal, setShowBillsModal] = useState(false);
+  const [showBankConnect, setShowBankConnect] = useState(false);
+  const [bankConnected, setBankConnected] = useState(false);
+  const [bankName, setBankName] = useState('');
+  const [bankAccount, setBankAccount] = useState('');
+  const [bankIfsc, setBankIfsc] = useState('');
+  const [bankConnecting, setBankConnecting] = useState(false);
+  const rewardsRef = useRef<HTMLElement>(null);
+
+  // Verification state
+  const [verifying, setVerifying] = useState(false);
+  const [verifyResult, setVerifyResult] = useState<VerifyResult | null>(null);
+  const [showVerify, setShowVerify] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  if (!user) return null;
+
+  const iq = user.IQ;
+  const ecoBalance = 1247;
+  const monthlyEarned = 342;
+  const totalEcoPoints = 185;
+
+  const filteredProducts = ECO_PRODUCTS.filter(p => {
+    const matchCat = selectedCategory === 'all' || p.category === selectedCategory;
+    const matchSearch = !searchQuery || p.name.toLowerCase().inclu

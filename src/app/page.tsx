@@ -18,6 +18,9 @@ import { EcoSpaceView } from '@/components/views/EcoSpaceView';
 import { GreenFinanceView } from '@/components/views/GreenFinanceView';
 import { CouponsView } from '@/components/views/CouponsView';
 import { TransitView } from '@/components/views/TransitView';
+import { ImpactView } from '@/components/views/ImpactView';
+import { FinanceView } from '@/components/views/FinanceView';
+import { MarketplaceView } from '@/components/views/MarketplaceView';
 import { LeaderboardList } from '@/components/leaderboard/LeaderboardList';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
@@ -81,8 +84,11 @@ export default function Home() {
         {currentView === 'ecospace' && <EcoSpaceView key="ecospace" />}
         {currentView === 'greenfinance' && <GreenFinanceView key="greenfinance" />}
         {currentView === 'coupons' && <CouponsView key="coupons" />}
-        {currentView === 'transit' && <TransitView key="transit" />}
-        {currentView === 'insights' && <InsightsView key="insights" />}
+          {currentView === 'transit' && <TransitView key="transit" />}
+          {currentView === 'impact' && <ImpactView key="impact" />}
+              {currentView === 'finance' && <FinanceView key="finance" />}
+              {currentView === 'marketplace' && <MarketplaceView key="marketplace" />}
+            {currentView === 'insights' && <InsightsView key="insights" />}
         {currentView === 'activities' && <ActivitiesView key="activities" />}
         {currentView === 'community' && <CommunityView key="community" />}
         {currentView === 'learn' && <LearnView key="learn" />}

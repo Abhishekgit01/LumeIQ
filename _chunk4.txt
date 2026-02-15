@@ -1,0 +1,177 @@
+                             <CreditCard className="w-6 h-6 text-[#007aff]" />
+                            </div>
+                            <div>
+                              <h3 className="text-[18px] font-bold text-[var(--ios-label)]">Pay for Cart</h3>
+                              <p className="text-[13px] text-[var(--ios-tertiary-label)]">{cartCount} items in your cart</p>
+                              {bankConnected && (
+                                <div className="flex items-center gap-1.5 mt-1">
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-[#34c759]" />
+                                  <span className="text-[11px] font-medium text-[#34c759]">{bankName} Bank Connected</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          {cartCount > 0 ? (
+                            <>
+                              <div className="space-y-2 mb-4 max-h-[200px] overflow-y-auto">
+                                {Array.from(cart.entries()).map(([id, qty]) => {
+                                  const p = ECO_PRODUCTS.find(x => x.id === id);
+                                  if (!p) return null;
+                                  return (
+                                    <div key={id} className="flex items-center gap-3 p-3 rounded-[12px] bg-[var(--ios-bg)]">
+                                      <span className="text-[24px]">{p.emoji}</span>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-[13px] font-medium text-[var(--ios-label)] truncate">{p.name}</p>
+                                        <p className="text-[11px] text-[var(--ios-tertiary-label)]">{p.brand} &middot; Qty: {qty}</p>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <button onClick={() => setCart(prev => { const n = new Map(prev); const c = n.get(id) || 0; if (c <= 1) n.delete(id); else n.set(id, c - 1); return n; })} className="w-6 h-6 rounded-full bg-[var(--ios-separator)] flex items-center justify-center"><Minus className="w-3 h-3" /></button>
+                                        <span className="text-[14px] font-bold text-[var(--ios-label)]">{'\u20B9'}{p.price * qty}</span>
+                                        <button onClick={() => addToCart(id)} className="w-6 h-6 rounded-full bg-[#34c75920] flex items-center justify-center"><Plus className="w-3 h-3 text-[#34c759]" /></button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              <div className="flex items-center justify-between p-3 rounded-[12px] bg-[#34c75910] mb-4">
+                                <span className="text-[14px] font-medium text-[var(--ios-label)]">Total</span>
+                                <span className="text-[20px] font-bold text-[#34c759]">{'\u20B9'}{cartTotal}</span>
+                              </div>
+                              {bankConnected ? (
+                              <button onClick={() => { setCart(new Map()); setShowPayModal(false); }} className="w-full py-3.5 rounded-[14px] bg-gradient-to-r from-[#007aff] to-[#0055d4] text-white text-[15px] font-semibold ios-press flex items-center justify-center gap-2">
+                                <CreditCard className="w-5 h-5" />
+                                Pay {String.fromCharCode(8377)}{cartTotal}
+                              </button>
+                            ) : (
+                              <button onClick={() => setShowBankConnect(true)} className="w-full py-3.5 rounded-[14px] bg-gradient-to-r from-[#5856d6] to-[#3634a3] text-white text-[15px] font-semibold ios-press flex items-center justify-center gap-2">
+                                <Building2 className="w-5 h-5" />
+                                Connect Bank Account to Pay
+                              </button>
+                            )}
+                            </>
+                          ) : (
+                            <div className="text-center py-8">
+                              <ShoppingCart className="w-12 h-12 text-[var(--ios-tertiary-label)] mx-auto mb-3" />
+                              <p className="text-[15px] font-medium text-[var(--ios-secondary-label)]">Your cart is empty</p>
+                              <p className="text-[12px] text-[var(--ios-tertiary-label)] mt-1">Add eco products from the Shop tab</p>
+                              <button onClick={() => { setShowPayModal(false); setActiveTab('shop'); }} className="mt-4 px-6 py-2.5 rounded-[12px] bg-[#34c759] text-white text-[13px] font-semibold ios-press">
+                                Browse Products
+                              </button>
+                            </div>
+                          )}
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+      
+      
+                  {/* ═══ BANK CONNECT MODAL ═══ */}
+                  <AnimatePresence>
+                    {showBankConnect && (
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] bg-black/50 flex items-end justify-center" onClick={() => setShowBankConnect(false)}>
+                        <motion.div initial={{ y: 300 }} animate={{ y: 0 }} exit={{ y: 300 }} transition={{ type: 'spring', damping: 25 }} className="w-full max-w-[430px] bg-[var(--ios-card)] rounded-t-[24px] p-6" onClick={e => e.stopPropagation()}>
+                          <div className="w-10 h-1 rounded-full bg-[var(--ios-separator)] mx-auto mb-5" />
+                          <div className="flex items-center gap-3 mb-5">
+                            <div className="w-12 h-12 rounded-[14px] bg-[#5856d615] flex items-center justify-center">
+                              <Building2 className="w-6 h-6 text-[#5856d6]" />
+                            </div>
+                            <div>
+                              <h3 className="text-[18px] font-bold text-[var(--ios-label)]">Connect Bank Account</h3>
+                              <p className="text-[13px] text-[var(--ios-tertiary-label)]">Link your bank to make payments</p>
+                            </div>
+                          </div>
+                          <div className="space-y-3 mb-5">
+                            <div>
+                              <label className="text-[12px] font-medium text-[var(--ios-secondary-label)] mb-1 block">Bank Name</label>
+                              <select value={bankName} onChange={e => setBankName(e.target.value)} className="w-full px-4 py-3 rounded-[12px] bg-[var(--ios-bg)] text-[14px] text-[var(--ios-label)] outline-none border border-[var(--ios-separator)]">
+                                <option value="">Select your bank</option>
+                                <option value="SBI">State Bank of India</option>
+                                <option value="HDFC">HDFC Bank</option>
+                                <option value="ICICI">ICICI Bank</option>
+                                <option value="Axis">Axis Bank</option>
+                                <option value="Kotak">Kotak Mahindra Bank</option>
+                                <option value="PNB">Punjab National Bank</option>
+                                <option value="BOB">Bank of Baroda</option>
+                                <option value="Canara">Canara Bank</option>
+                                <option value="IndusInd">IndusInd Bank</option>
+                                <option value="Yes">Yes Bank</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-[12px] font-medium text-[var(--ios-secondary-label)] mb-1 block">Account Number</label>
+                              <input type="text" value={bankAccount} onChange={e => setBankAccount(e.target.value.replace(/\D/g, ''))} placeholder="Enter account number" maxLength={18} className="w-full px-4 py-3 rounded-[12px] bg-[var(--ios-bg)] text-[14px] text-[var(--ios-label)] placeholder:text-[var(--ios-tertiary-label)] outline-none border border-[var(--ios-separator)]" />
+                            </div>
+                            <div>
+                              <label className="text-[12px] font-medium text-[var(--ios-secondary-label)] mb-1 block">IFSC Code</label>
+                              <input type="text" value={bankIfsc} onChange={e => setBankIfsc(e.target.value.toUpperCase())} placeholder="e.g. SBIN0001234" maxLength={11} className="w-full px-4 py-3 rounded-[12px] bg-[var(--ios-bg)] text-[14px] text-[var(--ios-label)] placeholder:text-[var(--ios-tertiary-label)] outline-none border border-[var(--ios-separator)] font-mono" />
+                            </div>
+                          </div>
+                          <div className="p-3 rounded-[12px] bg-[#ff9f0a10] border border-[#ff9f0a30] mb-4 flex items-start gap-2">
+                            <ShieldCheck className="w-4 h-4 text-[#ff9f0a] mt-0.5 shrink-0" />
+                            <p className="text-[11px] text-[#ff9f0a]">Your bank details are encrypted and secured with 256-bit encryption.</p>
+                          </div>
+                          <button disabled={!bankName || bankAccount.length < 8 || bankIfsc.length < 11 || bankConnecting} onClick={() => { setBankConnecting(true); setTimeout(() => { setBankConnected(true); setBankConnecting(false); setShowBankConnect(false); }, 2000); }} className="w-full py-3.5 rounded-[14px] bg-gradient-to-r from-[#5856d6] to-[#3634a3] text-white text-[15px] font-semibold ios-press flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none">
+                            {bankConnecting ? (<><Loader2 className="w-5 h-5 animate-spin" />Verifying...</>) : (<><Lock className="w-5 h-5" />Connect Securely</>)}
+                          </button>
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+      
+                  {/* ═══ BILLS MODAL ═══ */}
+                  <AnimatePresence>
+                    {showBillsModal && (
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/50 flex items-end justify-center" onClick={() => setShowBillsModal(false)}>
+                        <motion.div initial={{ y: 300 }} animate={{ y: 0 }} exit={{ y: 300 }} transition={{ type: 'spring', damping: 25 }} className="w-full max-w-[430px] bg-[var(--ios-card)] rounded-t-[24px] p-6" onClick={e => e.stopPropagation()}>
+                          <div className="w-10 h-1 rounded-full bg-[var(--ios-separator)] mx-auto mb-5" />
+                          <div className="flex items-center gap-3 mb-5">
+                            <div className="w-12 h-12 rounded-[14px] bg-[#ff9f0a15] flex items-center justify-center">
+                              <Receipt className="w-6 h-6 text-[#ff9f0a]" />
+                            </div>
+                            <div>
+                              <h3 className="text-[18px] font-bold text-[var(--ios-label)]">Cart Bill Summary</h3>
+                              <p className="text-[13px] text-[var(--ios-tertiary-label)]">{cartCount} items</p>
+                            </div>
+                          </div>
+                          {cartCount > 0 ? (
+                            <>
+                              <div className="space-y-2 mb-4">
+                                {Array.from(cart.entries()).map(([id, qty]) => {
+                                  const p = ECO_PRODUCTS.find(x => x.id === id);
+                                  if (!p) return null;
+                                  return (
+                                    <div key={id} className="flex items-center justify-between py-2 border-b border-[var(--ios-separator)]">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-[18px]">{p.emoji}</span>
+                                        <div>
+                                          <p className="text-[13px] font-medium text-[var(--ios-label)]">{p.name}</p>
+                                          <p className="text-[11px] text-[var(--ios-tertiary-label)]">x{qty} @ {'\u20B9'}{p.price}</p>
+                                        </div>
+                                      </div>
+                                      <span className="text-[14px] font-semibold text-[var(--ios-label)]">{'\u20B9'}{p.price * qty}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              <div className="space-y-2 p-4 rounded-[14px] bg-[var(--ios-bg)]">
+                                <div className="flex justify-between text-[13px]">
+                                  <span className="text-[var(--ios-secondary-label)]">Subtotal</span>
+                                  <span className="text-[var(--ios-label)] font-medium">{'\u20B9'}{cartTotal}</span>
+                                </div>
+                                <div className="flex justify-between text-[13px]">
+                                  <span className="text-[var(--ios-secondary-label)]">Eco Discount (5%)</span>
+                                  <span className="text-[#34c759] font-medium">-{'\u20B9'}{Math.round(cartTotal * 0.05)}</span>
+                                </div>
+                                <div className="flex justify-between text-[13px]">
+                                  <span className="text-[var(--ios-secondary-label)]">Eco Points Earned</span>
+                                  <span className="text-[#ff9f0a] font-medium">+{Array.from(cart.entries()).reduce((s, [id, qty]) => { const p = ECO_PRODUCTS.find(x => x.id === id); return s + (p ? p.ecoPoints * qty : 0); }, 0)} pts</span>
+                                </div>
+                                <div className="h-px bg-[var(--ios-separator)] my-1" />
+                                <div className="flex justify-between">
+                                  <span className="text-[15px] font-bold text-[var(--ios-label)]">Total</span>
+                                  <span className="text-[18px] font-bold text-[#34c759]">{'\u20B9'}{cartTotal - Math.round(cartTotal * 0.05)}</span>
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                    

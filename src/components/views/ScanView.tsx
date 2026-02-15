@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Search, Camera, CameraOff, Leaf, ChevronRight, RotateCcw, Sparkles,
-  AlertTriangle, CheckCircle, XCircle, Clock, ShoppingBag, ArrowRight,
+  Search, Leaf, ChevronRight, RotateCcw, Sparkles,
+  AlertTriangle, CheckCircle, XCircle, Clock, ShoppingBag,
   Package, Droplets, Zap, Truck, Award, Info, Star, ChevronDown, ChevronUp,
   Recycle, Globe, Wheat, FlaskConical, Shield, Heart, Tag
 } from 'lucide-react';
@@ -126,31 +126,6 @@ const NOVA_DESCRIPTIONS: Record<number, { label: string; color: string; desc: st
   4: { label: 'Ultra-Processed', color: '#E63E11', desc: 'Ultra-processed food and drink products' },
 };
 
-/* ── Green alternatives (real-ish suggestions) ── */
-const GREEN_ALTERNATIVES: Record<string, { name: string; reason: string; score: number }[]> = {
-  default: [
-    { name: 'Local Organic Alternative', reason: 'Locally produced with organic farming practices, reducing transport emissions by up to 60%', score: 82 },
-    { name: 'Zero-Waste Brand', reason: 'Packaged in 100% compostable materials with carbon-neutral production', score: 88 },
-    { name: 'Fair Trade Option', reason: 'Fair trade certified with transparent supply chain and renewable energy usage', score: 79 },
-  ],
-  spreads: [
-    { name: 'Local Peanut Butter (Organic)', reason: 'No palm oil, glass jar packaging, locally sourced peanuts', score: 85 },
-    { name: 'Sunflower Seed Butter', reason: 'Lower water footprint, recyclable packaging, no deforestation link', score: 82 },
-  ],
-  beverages: [
-    { name: 'Filtered Tap Water', reason: 'Zero packaging waste, negligible carbon footprint', score: 98 },
-    { name: 'Local Fruit Juice (Glass)', reason: 'Returnable glass bottles, locally sourced fruits, no added sugars', score: 80 },
-  ],
-  snacks: [
-    { name: 'Homemade Trail Mix', reason: 'Buy in bulk, zero single-use packaging, control ingredients', score: 90 },
-    { name: 'Local Bakery Cookies', reason: 'Short supply chain, minimal packaging, fresh ingredients', score: 78 },
-  ],
-  dairy: [
-    { name: 'Oat Milk', reason: '80% lower emissions than dairy, minimal water usage, recyclable carton', score: 85 },
-    { name: 'Local Farm Milk (Glass)', reason: 'Returnable glass bottles, grass-fed cows, short transport', score: 75 },
-  ],
-};
-
 /* ── Parse real OpenFoodFacts response ── */
 function parseOpenFoodFactsProduct(data: any, barcode: string): ProductData {
   const p = data.product;
@@ -258,17 +233,13 @@ function parseOpenFoodFactsProduct(data: any, barcode: string): ProductData {
 export function ScanView() {
   const [barcode, setBarcode] = useState('');
   const [loading, setLoading] = useState(false);
-  const [product, setProduct] = useState<ProductData | null>(null);
-  const [error, setError] = useState('');
-  const [scannerActive, setScannerActive] = useState(false);
-  const [showAlternative, setShowAlternative] = useState(false);
-  const [alternative, setAlternative] = useState<{ name: string; reason: string; score: number } | null>(null);
+    const [product, setProduct] = useState<ProductData | null>(null);
+    const [error, setError] = useState('');
   const [scanHistory, setScanHistory] = useState<ScanLogEntry[]>([]);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     ingredients: false, nutrition: false, packaging: false, environmental: false, certifications: false
   });
-  const scannerRef = useRef<HTMLDivElement>(null);
-  const html5QrCodeRef = useRef<any>(null);
+  const [cameraProcessing] = useState(false);
 
   // ─── Purchase Confirmation Integration ───
   const { user } = useStore();
@@ -290,10 +261,8 @@ export function ScanView() {
 
     setLoading(true);
     setError('');
-    setProduct(null);
-    setShowAlternative(false);
-    setAlternative(null);
-    setExpandedSections({ ingredients: false, nutrition: false, packaging: false, environmental: false, certifications: false });
+      setProduct(null);
+      setExpandedSections({ ingredients: false, nutrition: false, packaging: false, environmental: false, certifications: false });
 
     try {
       const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${trimmed}.json`);
@@ -334,64 +303,15 @@ export function ScanView() {
     setLoading(false);
   }, []);
 
-  const startScanner = useCallback(async () => {
-    if (!scannerRef.current) return;
-    setScannerActive(true);
-    try {
-      const { Html5Qrcode } = await import('html5-qrcode');
-      const scanner = new Html5Qrcode('qr-reader');
-      html5QrCodeRef.current = scanner;
-      await scanner.start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 250, height: 150 } },
-        (decodedText) => {
-          setBarcode(decodedText);
-          fetchProduct(decodedText);
-          scanner.stop().catch(() => {});
-          setScannerActive(false);
-        },
-        () => {}
-      );
-    } catch {
-      setError('Camera access denied or not available. Please enter the barcode manually.');
-      setScannerActive(false);
-    }
-  }, [fetchProduct]);
-
-  const stopScanner = useCallback(async () => {
-    if (html5QrCodeRef.current) {
-      try { await html5QrCodeRef.current.stop(); } catch {}
-      html5QrCodeRef.current = null;
-    }
-    setScannerActive(false);
-  }, []);
-
-  useEffect(() => {
-    return () => { html5QrCodeRef.current?.stop().catch(() => {}); };
-  }, []);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (barcode.trim()) fetchProduct(barcode);
-  };
-
-  const suggestAlternative = () => {
-    setShowAlternative(true);
-    const cat = product?.category?.toLowerCase() || '';
-    let pool = GREEN_ALTERNATIVES.default;
-    if (cat.includes('spread') || cat.includes('chocolate') || cat.includes('hazelnut')) pool = GREEN_ALTERNATIVES.spreads;
-    else if (cat.includes('beverage') || cat.includes('drink') || cat.includes('water') || cat.includes('soda') || cat.includes('juice')) pool = GREEN_ALTERNATIVES.beverages;
-    else if (cat.includes('snack') || cat.includes('biscuit') || cat.includes('cookie') || cat.includes('chip')) pool = GREEN_ALTERNATIVES.snacks;
-    else if (cat.includes('dairy') || cat.includes('milk') || cat.includes('cheese') || cat.includes('yogurt')) pool = GREEN_ALTERNATIVES.dairy;
-    setAlternative(pool[Math.floor(Math.random() * pool.length)]);
   };
 
   const reset = () => {
     setProduct(null);
     setBarcode('');
     setError('');
-    setShowAlternative(false);
-    setAlternative(null);
   };
 
   return (
@@ -457,21 +377,9 @@ export function ScanView() {
             </div>
           </form>
 
-          {/* Scanner toggle + Quick try */}
-          <div className="mt-3 flex items-center gap-3">
-            <button
-              onClick={scannerActive ? stopScanner : startScanner}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-[12px] text-[14px] font-medium transition-all ${
-                scannerActive
-                  ? 'bg-[#d94f4f]/10 text-[#d94f4f] border border-[#d94f4f]/20'
-                  : 'bg-[#2d8a4e]/8 text-[#2d8a4e] border border-[#2d8a4e]/15 hover:bg-[#2d8a4e]/12'
-              }`}
-            >
-              {scannerActive ? <CameraOff className="w-4 h-4" /> : <Camera className="w-4 h-4" />}
-              {scannerActive ? 'Stop Camera' : 'Scan with Camera'}
-            </button>
-            <span className="text-[12px] text-[#5e7a5e]/60">or enter barcode manually</span>
-          </div>
+            <div className="mt-3 flex items-center gap-3">
+              <span className="text-[12px] text-[#5e7a5e]/60">Enter barcode number manually or try the samples below</span>
+            </div>
 
           <div className="mt-3 flex flex-wrap gap-2">
             <span className="text-[12px] text-[#5e7a5e] self-center">Try real products:</span>
@@ -494,22 +402,6 @@ export function ScanView() {
           </div>
         </div>
       </div>
-
-      {/* ═══ Scanner Viewport ═══ */}
-      <AnimatePresence>
-        {scannerActive && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-            <div className="card-surface p-4 relative">
-              <CardLeaves variant="a" />
-              <p className="text-[13px] text-[#5e7a5e] mb-3 relative z-10 flex items-center gap-2">
-                <Camera className="w-4 h-4 text-[#2d8a4e]" />
-                Point your camera at a barcode
-              </p>
-              <div id="qr-reader" ref={scannerRef} className="w-full max-w-[400px] mx-auto rounded-[12px] overflow-hidden relative z-10" />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* ═══ Error ═══ */}
       <AnimatePresence>
@@ -912,58 +804,7 @@ export function ScanView() {
               </CollapsibleSection>
             )}
 
-            {/* ── Suggest Greener Alternative ── */}
-            <div className="card-surface p-5 relative">
-              <CardLeaves variant="a" />
-              <div className="relative z-10">
-                {!showAlternative ? (
-                  <motion.button onClick={suggestAlternative} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
-                    className="w-full flex items-center justify-between p-4 rounded-[14px] bg-gradient-to-r from-[#2d8a4e]/8 to-[#5cb85c]/8 border border-[#2d8a4e]/10 hover:border-[#2d8a4e]/20 transition-all"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-[12px] bg-gradient-to-br from-[#2d8a4e] to-[#5cb85c] flex items-center justify-center">
-                        <Leaf className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="text-left">
-                        <p className="text-[15px] font-semibold text-[#1a2e1a]">Suggest a Greener Alternative</p>
-                        <p className="text-[12px] text-[#5e7a5e]">Find eco-friendly options based on this product category</p>
-                      </div>
-                    </div>
-                    <ArrowRight className="w-5 h-5 text-[#2d8a4e]" />
-                  </motion.button>
-                ) : alternative ? (
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Leaf className="w-5 h-5 text-[#2d8a4e]" />
-                      <span className="text-[15px] font-semibold text-[#1a2e1a]">Greener Alternative</span>
-                    </div>
-                    <div className="p-4 rounded-[14px] bg-[#2d8a4e]/5 border border-[#2d8a4e]/10">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-[16px] font-bold text-[#2d8a4e]">{alternative.name}</h4>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[20px] font-bold text-[#2d8a4e] tabular-nums">{alternative.score}</span>
-                          <span className="text-[11px] text-[#5e7a5e]">/100</span>
-                        </div>
-                      </div>
-                      <p className="text-[13px] text-[#5e7a5e] leading-relaxed">{alternative.reason}</p>
-                      <div className="mt-3 flex items-center gap-2">
-                        <div className="h-[6px] flex-1 rounded-full bg-[#2d8a4e]/10 overflow-hidden">
-                          <motion.div className="h-full rounded-full bg-[#2d8a4e]" initial={{ width: 0 }} animate={{ width: `${alternative.score}%` }} transition={{ duration: 0.8 }} />
-                        </div>
-                        <span className="text-[12px] text-[#2d8a4e] font-semibold">
-                          +{alternative.score - product.ecoScore} pts better
-                        </span>
-                      </div>
-                    </div>
-                    <button onClick={suggestAlternative} className="text-[13px] text-[#2d8a4e] font-medium hover:underline flex items-center gap-1">
-                      <RotateCcw className="w-3 h-3" /> Try another suggestion
-                    </button>
-                  </motion.div>
-                ) : null}
-              </div>
-            </div>
-
-            {/* ── Data quality notice ── */}
+              {/* ── Data quality notice ── */}
             <div className="flex items-start gap-2 px-4 py-3 rounded-[12px] bg-[#2d8a4e]/4 border border-[#2d8a4e]/8">
               <Info className="w-4 h-4 text-[#2d8a4e] shrink-0 mt-0.5" />
               <div>
@@ -989,13 +830,12 @@ export function ScanView() {
               {scanHistory.map((entry, i) => (
                 <button
                   key={entry.product.barcode + i}
-                  onClick={() => {
-                    setBarcode(entry.product.barcode);
-                    setProduct(entry.product);
-                    setShowAlternative(false);
-                    setError('');
-                    setExpandedSections({ ingredients: false, nutrition: false, packaging: false, environmental: false, certifications: false });
-                  }}
+                    onClick={() => {
+                      setBarcode(entry.product.barcode);
+                      setProduct(entry.product);
+                      setError('');
+                      setExpandedSections({ ingredients: false, nutrition: false, packaging: false, environmental: false, certifications: false });
+                    }}
                   className={`w-full flex items-center gap-3 px-4 py-3.5 relative z-10 text-left hover:bg-[#2d8a4e]/3 transition-all ${
                     i < scanHistory.length - 1 ? 'border-b border-[#2d8a4e]/5' : ''
                   }`}
@@ -1034,9 +874,9 @@ export function ScanView() {
             <SectionHeader>How it works</SectionHeader>
             <div className="lg:grid lg:grid-cols-3 gap-3 space-y-3 lg:space-y-0">
               {[
-                { step: '1', title: 'Scan or Enter', desc: 'Use your camera to scan a barcode or type it in. Works with any packaged food product worldwide.', icon: <Camera className="w-5 h-5" /> },
+                { step: '1', title: 'Enter Barcode', desc: 'Type a barcode number or tap one of the sample products. Works with any packaged food product worldwide.', icon: <Search className="w-5 h-5" /> },
                 { step: '2', title: 'Real Data Analysis', desc: 'We fetch real Nutri-Score, Eco-Score, NOVA group, ingredients, allergens, and packaging data from OpenFoodFacts.', icon: <Leaf className="w-5 h-5" /> },
-                { step: '3', title: 'Make Better Choices', desc: 'Compare environmental impact, check nutrition quality, and discover greener alternatives.', icon: <Sparkles className="w-5 h-5" /> },
+                  { step: '3', title: 'Understand Your Impact', desc: 'See real environmental scores, nutrition data, packaging materials, and certifications at a glance.', icon: <Sparkles className="w-5 h-5" /> },
               ].map((item, i) => (
                 <div key={item.step} className="card-surface-sm p-4 relative">
                   <CardLeaves variant={(['a', 'b', 'c'] as const)[i]} />

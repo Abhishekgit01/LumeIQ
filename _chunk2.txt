@@ -1,0 +1,308 @@
+des(searchQuery.toLowerCase()) || p.brand.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchCat && matchSearch;
+  });
+
+  const toggleFavorite = (id: string) => {
+    setFavorites(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const addToCart = (id: string) => {
+    setCart(prev => {
+      const next = new Map(prev);
+      next.set(id, (next.get(id) || 0) + 1);
+      return next;
+    });
+  };
+
+  const cartCount = Array.from(cart.values()).reduce((a, b) => a + b, 0);
+  const cartTotal = Array.from(cart.entries()).reduce((sum, [id, qty]) => {
+    const p = ECO_PRODUCTS.find(x => x.id === id);
+    return sum + (p ? p.price * qty : 0);
+  }, 0);
+
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard.writeText(code).catch(() => {});
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 2000);
+  };
+
+  const handleVerifyPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setVerifying(true);
+    setShowVerify(true);
+    setVerifyResult(null);
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = (reader.result as string).split(',')[1];
+      const result = await verifyEcoPurchase(base64);
+      setVerifyResult(result);
+      setVerifying(false);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleCameraCapture = async (base64: string) => {
+    setVerifying(true);
+    setShowVerify(true);
+    setVerifyResult(null);
+    const result = await verifyEcoPurchase(base64);
+    setVerifyResult(result);
+    setVerifying(false);
+  };
+
+  const filteredTx = TRANSACTIONS.filter(tx => txFilter === 'all' || tx.type === txFilter);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      className="flex flex-col gap-4 pb-6"
+    >
+      {/* ═══ TOP TABS: Shop / Finance ═══ */}
+      <div className="flex gap-1 p-1 bg-[var(--ios-card)] rounded-[14px]" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+        {([
+          { key: 'shop' as MarketTab, label: 'Eco Shop', icon: ShoppingBag },
+          { key: 'finance' as MarketTab, label: 'Eco Finance', icon: Wallet },
+        ]).map(({ key, label, icon: Icon }) => (
+          <button
+            key={key}
+            onClick={() => setActiveTab(key)}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-[11px] text-[13px] font-semibold transition-all ${
+              activeTab === key
+                ? 'bg-gradient-to-r from-[#34c759] to-[#30d158] text-white shadow-md'
+                : 'text-[var(--ios-secondary-label)]'
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'shop' ? (
+        <>
+          {/* ═══ SEARCH BAR ═══ */}
+            <div className="relative">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ios-tertiary-label)]" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder='Search eco products...'
+                className="w-full pl-10 pr-12 py-3 rounded-[14px] bg-[var(--ios-card)] text-[14px] text-[var(--ios-label)] placeholder:text-[var(--ios-tertiary-label)] outline-none"
+                style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}
+              />
+              <button
+                onClick={() => setCameraOpen(true)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-[10px] bg-[#34c75915] flex items-center justify-center"
+              >
+                <Camera className="w-4 h-4 text-[#34c759]" />
+              </button>
+            </div>
+
+          {/* ═══ CATEGORIES ═══ */}
+          <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1 -mx-1 px-1">
+            {CATEGORIES.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full whitespace-nowrap text-[12px] font-semibold transition-all shrink-0 ${
+                  selectedCategory === cat.id
+                    ? 'text-white shadow-md'
+                    : 'bg-[var(--ios-card)] text-[var(--ios-secondary-label)]'
+                }`}
+                style={selectedCategory === cat.id ? { background: cat.color } : { boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}
+              >
+                <span className="text-[14px]">{cat.emoji}</span>
+                {cat.label}
+              </button>
+            ))}
+          </div>
+
+          {/* ═══ VERIFY PURCHASE MODAL ═══ */}
+          <AnimatePresence>
+            {showVerify && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="ios-card p-5"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-[15px] font-semibold text-[var(--ios-label)]">Eco Purchase Verification</h3>
+                  <button onClick={() => { setShowVerify(false); setVerifyResult(null); }} className="text-[var(--ios-tertiary-label)]">
+                    <XCircle className="w-5 h-5" />
+                  </button>
+                </div>
+                {verifying ? (
+                  <div className="flex flex-col items-center gap-3 py-6">
+                    <Loader2 className="w-8 h-8 text-[#34c759] animate-spin" />
+                    <p className="text-[13px] text-[var(--ios-secondary-label)]">Analyzing with Google Vision AI...</p>
+                  </div>
+                ) : verifyResult ? (
+                  <div className="flex flex-col items-center gap-3 py-4">
+                    {verifyResult.verified ? (
+                      <>
+                        <div className="w-14 h-14 rounded-full bg-[#34c75920] flex items-center justify-center">
+                          <CheckCircle2 className="w-8 h-8 text-[#34c759]" />
+                        </div>
+                        <p className="text-[15px] font-semibold text-[#34c759]">Eco Purchase Verified!</p>
+                        <p className="text-[12px] text-[var(--ios-secondary-label)]">
+                          Detected: <span className="font-medium">{verifyResult.label}</span> ({(verifyResult.confidence * 100).toFixed(0)}% confidence)
+                        </p>
+                        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#34c75915]">
+                          <Zap className="w-4 h-4 text-[#34c759]" />
+                          <span className="text-[14px] font-bold text-[#34c759]">+{verifyResult.pointsEarned} Eco Points</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-14 h-14 rounded-full bg-[#ff453a20] flex items-center justify-center">
+                          <XCircle className="w-8 h-8 text-[#ff453a]" />
+                        </div>
+                        <p className="text-[15px] font-semibold text-[#ff453a]">Not Verified</p>
+                        <p className="text-[12px] text-[var(--ios-secondary-label)] text-center">
+                          Could not detect an eco product. Detected: {verifyResult.label}
+                        </p>
+                        <button
+                          onClick={() => fileInputRef.current?.click()}
+                          className="px-4 py-2 rounded-[10px] bg-[var(--ios-blue)] text-white text-[13px] font-semibold ios-press"
+                        >
+                          Try Again
+                        </button>
+                      </>
+                    )}
+                  </div>
+                ) : null}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* ═══ ECO POINTS BANNER ═══ */}
+          <div className="ios-card overflow-hidden">
+            <div className="p-4 flex items-center gap-3" style={{ background: 'linear-gradient(135deg, #34c759 0%, #248a3d 100%)' }}>
+              <div className="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center">
+                <Leaf className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-[12px] text-white/70 font-medium">Your Eco Points</p>
+                <p className="text-[22px] font-bold text-white">{totalEcoPoints} pts</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[11px] text-white/60">Eco Balance</p>
+                <p className="text-[16px] font-bold text-white">{'\u20B9'}{ecoBalance}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* ═══ FEATURED COLLECTIONS (like screenshot) ═══ */}
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-[20px] font-bold text-[var(--ios-label)]">Suggested For You</h2>
+              <div className="flex items-center gap-1 text-[#34c759]">
+                <Sparkles className="w-4 h-4" />
+                <span className="text-[12px] font-semibold">AI Picked</span>
+              </div>
+            </div>
+            <div className="flex gap-3 overflow-x-auto scrollbar-none pb-2 -mx-1 px-1">
+              {FEATURED_COLLECTIONS.map(col => (
+                <div
+                  key={col.id}
+                  className="shrink-0 w-[220px] rounded-[20px] p-5 relative overflow-hidden"
+                  style={{ background: col.gradient, minHeight: '200px' }}
+                >
+                  <span className="inline-block px-2.5 py-0.5 rounded-full bg-white/20 text-[10px] font-bold text-white/90 tracking-wider mb-2">
+                    {col.badge}
+                  </span>
+                  <span className="absolute top-4 right-4 text-[28px]">{col.emoji}</span>
+                  <h3 className="text-[22px] font-bold text-white leading-tight mt-3 whitespace-pre-line">{col.title}</h3>
+                  <div className="mt-4 p-2 rounded-[10px] bg-white/15">
+                    <p className="text-[12px] text-white/90 font-medium">{col.subtitle}</p>
+                    <div className="flex items-center justify-between mt-1.5">
+                      <span className="text-[11px] text-white/70">{col.products} items</span>
+                      <span className="text-[12px] font-bold text-white">+{col.points} pts</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ═══ IMPACT BOOSTERS ═══ */}
+          <section>
+            <h2 className="text-[20px] font-bold text-[var(--ios-label)] mb-3">Impact Boosters</h2>
+            <div className="flex gap-2.5 overflow-x-auto scrollbar-none pb-2 -mx-1 px-1">
+              {[
+                { emoji: '🚲', title: 'Cycle to Work', sub: 'Zero emission commute', pts: 12, gradient: 'linear-gradient(135deg, #34c759 0%, #248a3d 100%)' },
+                { emoji: '♻️', title: 'Zero Waste Day', sub: 'No single-use plastic', pts: 15, gradient: 'linear-gradient(135deg, #30d158 0%, #1fa848 100%)' },
+                { emoji: '🛒', title: 'Eco Shopping', sub: 'Buy verified eco goods', pts: 20, gradient: 'linear-gradient(135deg, #007aff 0%, #0055d4 100%)' },
+                { emoji: '🔧', title: 'Repair Session', sub: 'Fix instead of replace', pts: 18, gradient: 'linear-gradient(135deg, #5856d6 0%, #3634a3 100%)' },
+              ].map((b, i) => (
+                <div
+                  key={i}
+                  className="shrink-0 w-[150px] rounded-[16px] p-4 flex flex-col justify-between"
+                  style={{ background: b.gradient, minHeight: '140px' }}
+                >
+                  <span className="text-[24px]">{b.emoji}</span>
+                  <div className="mt-auto">
+                    <p className="text-[14px] font-bold text-white">{b.title}</p>
+                    <p className="text-[11px] text-white/70 mt-0.5">{b.sub}</p>
+                    <div className="flex items-center gap-1 mt-2">
+                      <Zap className="w-3 h-3 text-white" />
+                      <span className="text-[12px] font-bold text-white">+{b.pts} pts</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ═══ PRODUCTS GRID ═══ */}
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-[20px] font-bold text-[var(--ios-label)]">Eco Products</h2>
+              <span className="text-[12px] text-[var(--ios-tertiary-label)]">{filteredProducts.length} items</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {filteredProducts.map(product => {
+                const discount = Math.round(((product.mrp - product.price) / product.mrp) * 100);
+                return (
+                  <motion.div
+                    key={product.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="ios-card overflow-hidden"
+                    style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
+                  >
+                    {/* Product image area */}
+                    <div
+                      className="relative h-[120px] flex items-center justify-center"
+                      style={{ background: product.gradient }}
+                    >
+                      <span className="text-[48px]">{product.emoji}</span>
+                      {product.badge && (
+                        <span
+                          className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[9px] font-bold text-white"
+                          style={{ backgroundColor: product.badgeColor }}
+                        >
+                          {product.badge}
+                        </span>
+                      )}
+                      <button
+                        onClick={() => toggleFavorite(product.id)}
+                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm"
+                      >
+                        <Heart
+                          className={`w-4 h-4 ${favorites.has(product.id) ? 'text-[#ff453a] fill-[#ff453a]' : 'text-white'}`}
+                        />
+                      </button>
+                      <div className="absolute bottom-2 right-2 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/30 backdr

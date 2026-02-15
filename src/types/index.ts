@@ -53,7 +53,7 @@ export interface LeaderboardUser {
   isCurrentUser?: boolean;
 }
 
-export type ViewType = 'onboarding' | 'dashboard' | 'insights' | 'activities' | 'community' | 'learn' | 'leaderboard' | 'profile' | 'scan' | 'ecospace' | 'greenfinance' | 'coupons' | 'transit';
+export type ViewType = 'onboarding' | 'dashboard' | 'insights' | 'activities' | 'community' | 'learn' | 'leaderboard' | 'profile' | 'scan' | 'ecospace' | 'greenfinance' | 'coupons' | 'transit' | 'impact' | 'finance' | 'marketplace';
 
 export const TIER_DEFINITIONS: Record<TierLevel, { min: number; max: number; label: string; color: string }> = {
   FND: { min: 0, max: 39, label: 'Foundation', color: '#8e8e93' },

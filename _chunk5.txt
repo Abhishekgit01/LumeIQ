@@ -1,0 +1,185 @@
+        <div className="text-center py-8">
+                              <Receipt className="w-12 h-12 text-[var(--ios-tertiary-label)] mx-auto mb-3" />
+                              <p className="text-[15px] font-medium text-[var(--ios-secondary-label)]">No bills yet</p>
+                              <p className="text-[12px] text-[var(--ios-tertiary-label)] mt-1">Add items to cart to see your bill</p>
+                            </div>
+                          )}
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+      
+                {/* ═══ MARKETPLACE REWARDS ═══ */}
+                <section ref={rewardsRef} className="ios-card p-5">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-[12px] bg-gradient-to-br from-[#ff9f0a] to-[#ff6b00] flex items-center justify-center">
+                      <Gift className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-[17px] font-semibold text-[var(--ios-label)]">Marketplace Rewards</h2>
+                      <p className="text-[12px] text-[var(--ios-tertiary-label)]">Earned from eco shopping</p>
+                    </div>
+                    <div className="flex gap-1">
+                      <button onClick={() => setCouponIdx(i => Math.max(i - 1, 0))} className="w-7 h-7 rounded-full bg-[var(--ios-bg)] flex items-center justify-center ios-press">
+                        <ChevronLeft className="w-4 h-4 text-[var(--ios-tertiary-label)]" />
+                      </button>
+                      <button onClick={() => setCouponIdx(i => Math.min(i + 1, COUPONS.length - 1))} className="w-7 h-7 rounded-full bg-[var(--ios-bg)] flex items-center justify-center ios-press">
+                        <ChevronRight className="w-4 h-4 text-[var(--ios-tertiary-label)]" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="relative h-[200px] overflow-hidden">
+                    {COUPONS.map((c, i) => {
+                      const offset = i - couponIdx;
+                      const isLocked = iq < c.iqRequired;
+                      return (
+                        <motion.div
+                          key={c.id}
+                          className="absolute inset-x-0 rounded-[16px] p-4 shadow-lg"
+                          style={{ background: c.gradient }}
+                          initial={false}
+                          animate={{
+                            y: offset * 12,
+                            scale: 1 - Math.abs(offset) * 0.04,
+                            opacity: Math.abs(offset) > 2 ? 0 : 1 - Math.abs(offset) * 0.15,
+                            zIndex: COUPONS.length - Math.abs(offset),
+                          }}
+                          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <p className="text-[11px] font-medium text-white/70 uppercase tracking-wider">Marketplace Reward</p>
+                              <p className="text-[18px] font-bold text-white mt-0.5">{c.title}</p>
+                            </div>
+                            <span className="text-[28px]">{c.emoji}</span>
+                          </div>
+                          {!isLocked ? (
+                            <>
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-[13px] text-white/80">{c.partner}</p>
+                                  <p className="text-[11px] text-white/50 mt-0.5">Expires: {c.expires}</p>
+                                </div>
+                                <button onClick={() => handleCopyCode(c.code)} className="px-3 py-1.5 rounded-[8px] bg-white text-[12px] font-bold ios-press text-black">
+                                  {copiedCode === c.code ? <><Check className="w-3 h-3 inline mr-1 text-green-600" />Copied</> : <><Copy className="w-3 h-3 inline mr-1" />{c.code}</>}
+                                </button>
+                              </div>
+                              <div className="mt-3 pt-3 border-t border-white/10 flex items-center gap-2">
+                                <QrCode className="w-4 h-4 text-white/50" />
+                                <span className="text-[11px] text-white/40 font-mono">LUMEIQ-{c.code}-2026</span>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-[13px] text-white/80">{c.partner}</p>
+                                  <p className="text-[11px] text-white/50 mt-0.5">Expires: {c.expires}</p>
+                                </div>
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-white/10">
+                                  <Lock className="w-3 h-3 text-white/60" />
+                                  <span className="text-[11px] text-white/60">IQ {c.iqRequired}+</span>
+                                </div>
+                              </div>
+                              <div className="mt-3">
+                                <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                  <div className="h-full bg-white/50 rounded-full" style={{ width: `${Math.min(100, (iq / c.iqRequired) * 100)}%` }} />
+                                </div>
+                                <p className="text-[10px] text-white/40 mt-1">Need +{c.iqRequired - iq} IQ to unlock</p>
+                              </div>
+                            </>
+                          )}
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex justify-center gap-1.5 mt-3">
+                    {COUPONS.map((_, i) => (
+                      <button key={i} onClick={() => setCouponIdx(i)} className={`w-2 h-2 rounded-full transition-all ${i === couponIdx ? 'bg-[var(--ios-blue)] w-4' : 'bg-[var(--ios-separator)]'}`} />
+                    ))}
+                  </div>
+                </section>
+      
+                {/* ═══ GREEN SAVINGS ═══ */}
+                <section className="ios-card p-5">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-[12px] bg-gradient-to-br from-[#34c759] to-[#248a3d] flex items-center justify-center">
+                      <PiggyBank className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-[17px] font-semibold text-[var(--ios-label)]">Green Savings</h2>
+                      <p className="text-[12px] text-[var(--ios-tertiary-label)]">Funded by marketplace cashback</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {SAVINGS_GOALS.map(g => {
+                      const pct = Math.min(100, (g.current / g.target) * 100);
+                      return (
+                        <div key={g.id} className="p-3 rounded-[12px] bg-[var(--ios-bg)]">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[20px]">{g.icon}</span>
+                              <div>
+                                <p className="text-[14px] font-medium text-[var(--ios-label)]">{g.name}</p>
+                                <p className="text-[11px] text-[var(--ios-tertiary-label)]">{'\u20B9'}{g.current.toLocaleString()} / {'\u20B9'}{g.target.toLocaleString()}</p>
+                              </div>
+                            </div>
+                            <span className="text-[14px] font-bold" style={{ color: g.color }}>{pct.toFixed(0)}%</span>
+                          </div>
+                          <div className="w-full h-2 bg-[var(--ios-separator)] rounded-full overflow-hidden">
+                            <motion.div className="h-full rounded-full" style={{ backgroundColor: g.color }} initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 1, delay: 0.2 }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+      
+                {/* ═══ TRANSACTIONS ═══ */}
+                <section className="ios-card p-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-[12px] bg-gradient-to-br from-[#007aff] to-[#0055d4] flex items-center justify-center">
+                      <Receipt className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-[17px] font-semibold text-[var(--ios-label)]">Transactions</h2>
+                      <p className="text-[12px] text-[var(--ios-tertiary-label)]">Marketplace activity</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-1 p-0.5 bg-[var(--ios-bg)] rounded-[10px] mb-3">
+                    {(['all', 'credit', 'debit'] as const).map(f => (
+                      <button
+                        key={f}
+                        onClick={() => setTxFilter(f)}
+                        className={`flex-1 py-1.5 rounded-[8px] text-[12px] font-medium transition-all ${
+                          txFilter === f ? 'bg-[var(--ios-card)] text-[var(--ios-label)] shadow-sm' : 'text-[var(--ios-tertiary-label)]'
+                        }`}
+                      >
+                        {f === 'all' ? 'All' : f === 'credit' ? 'Earned' : 'Spent'}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="space-y-1">
+                    <AnimatePresence mode="popLayout">
+                      {filteredTx.map(tx => (
+                        <motion.div key={tx.id} layout initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="flex items-center gap-3 p-3 rounded-[12px] bg-[var(--ios-bg)]">
+                          <span className="text-[22px]">{tx.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[14px] font-medium text-[var(--ios-label)]">{tx.title}</p>
+                            <p className="text-[11px] text-[var(--ios-tertiary-label)]">{tx.date} &middot; {tx.category}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className={`text-[15px] font-bold tabular-nums ${tx.type === 'credit' ? 'text-[#34c759]' : 'text-[var(--ios-label)]'}`}>
+                              {tx.type === 'credit' ? '+' : ''}{'\u20B9'}{Math.abs(tx.amount)}
+                            </p>
+                            {tx.points > 0 && (
+                              <p className="text-[10px] text-[#ff9f0a] font-semibold">+{tx.points} pts</p>
+                            )}
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+
+    </motion.div>
+  );
+}
