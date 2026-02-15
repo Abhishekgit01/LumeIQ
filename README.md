@@ -18,27 +18,13 @@ LumeIQ calculates your **Impact Quotient (IQ)**—a personalized score (0-100) t
 - **🏆 Leaderboards:** Compete with city-based rankings and peer comparisons.
 - **📱 Mobile-First Design:** Apple Fitness-inspired UI with dark mode and smooth Framer Motion animations.
 
-### 🧠 LumeIQ AI Skills
-Integrated intelligent agents capable of handling complex multimodal tasks:
-
-#### 🗣️ Voice & Audio
-- **ASR (Automatic Speech Recognition):** High-accuracy voice-to-text.
-- **TTS (Text-to-Speech):** Natural sounding voice synthesis.
-- **Podcast Generator:** Turn content into engaging audio episodes.
-
-#### 👁️ Vision & Video
-- **VLM (Vision Language Model):** Analyze and understand images.
-- **Video Understanding:** Extract insights from video content.
-- **Image & Video Generation:** Create media from text prompts.
-
-#### 📄 Document Intelligence
-- **Office Suite Support:** Process, read, and generate **DOCX**, **PPTX**, **XLSX**, and **PDF** files with high precision.
-- **Web Reader & Search:** Real-time web browsing and content summarization.
-
-#### 💰 Financial Intelligence
-- **Green Finance:** Track and analyze sustainable investments.
-- **Market Data:** Real-time stock quotes, indices, and crypto data.
-- **Portfolio Analysis:** Deep dive into financial health and impact.
+### 🔍 Smart Product Scanning (OpenFoodFacts Integration)
+Scan barcodes to instantly retrieve comprehensive environmental and nutritional data:
+- **🍎 Nutri-Score & Eco-Score:** Real-time fetching of product sustainability grades.
+- **📦 Packaging Analysis:** Detailed breakdown of packaging materials and recyclability.
+- **🌍 Carbon Footprint:** Estimate the CO2 impact of your groceries.
+- **🧪 Additives & Allergens:** Instant alerts for harmful ingredients.
+- **Data Source:** Powered by the open-source **OpenFoodFacts** database with over 3 million products.
 
 ---
 
@@ -47,8 +33,8 @@ Integrated intelligent agents capable of handling complex multimodal tasks:
 - **Frontend:** Next.js 15 (App Router), React, TypeScript
 - **Styling:** Tailwind CSS, Shadcn UI, Framer Motion
 - **Mobile:** Capacitor (Android)
-- **Backend Services:** Supabase (PostgreSQL), Prisma
-- **AI/ML Modules:** Custom Python/Node.js skills (ASR, TTS, LLM, etc.)
+- **Data:** OpenFoodFacts API, Supabase (PostgreSQL), Prisma
+- **State Management:** Zustand
 
 ---
 
@@ -121,15 +107,10 @@ LumeIQ/
 │   ├── app/             # Next.js App Router pages
 │   ├── components/      # React components (Views, UI)
 │   ├── lib/             # Utilities and helpers
-│   └── store/           # State management
-├── skills/              # AI Capabilities
-│   ├── ASR/             # Speech Recognition
-│   ├── finance/         # Financial Data API
-│   ├── LLM/             # Large Language Models
-│   ├── PDF/             # PDF Processing
-│   └── ...              # Other skills (Vision, Office, Web)
-├── mini-services/       # Microservices
-└── public/              # Static assets
+│   └── store/           # State management (Zustand)
+├── public/              # Static assets
+├── capacitor.config.ts  # Android build config
+└── package.json
 ```
 
 ---
