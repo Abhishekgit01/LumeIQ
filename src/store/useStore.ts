@@ -9,6 +9,8 @@ import {
   applyImpactMode 
 } from '@/lib/calculations';
 import { createDemoUser, generateLeaderboard } from '@/lib/mockData';
+import { scheduleSyncToCloud } from '@/lib/sync';
+import { getSessionWithHash } from '@/lib/localAuth';
 
 interface AppState {
   // User state
@@ -32,6 +34,13 @@ interface AppState {
 
 const generateId = () => Math.random().toString(36).substring(2, 15);
 
+function triggerSync(user: User) {
+  const session = getSessionWithHash();
+  if (session && !user.isDemo) {
+    scheduleSyncToCloud(user, session.email, session.passwordHash);
+  }
+}
+
 export const useStore = create<AppState>((set, get) => ({
   user: null,
   isDemoMode: false,
@@ -49,6 +58,7 @@ export const useStore = create<AppState>((set, get) => ({
         isDemoMode: savedUser.isDemo,
         leaderboard: generateLeaderboard(savedUser.baseline.city, savedUser.id)
       });
+      triggerSync(savedUser);
     }
   },
   
@@ -70,6 +80,7 @@ export const useStore = create<AppState>((set, get) => ({
     };
     
     saveUser(newUser);
+    triggerSync(newUser);
     
     set({ 
       user: newUser, 
@@ -89,6 +100,7 @@ export const useStore = create<AppState>((set, get) => ({
     }
     
     saveUser(updatedUser);
+    triggerSync(updatedUser);
     set({ user: updatedUser });
   },
   
@@ -107,7 +119,6 @@ export const useStore = create<AppState>((set, get) => ({
     const mode = modes.find(m => m.id === modeId);
     if (!mode) return;
     
-    // Calculate new ring values
     const newRings = applyImpactMode(
       mode.ring,
       mode.basePoints,
@@ -116,18 +127,15 @@ export const useStore = create<AppState>((set, get) => ({
       verified
     );
     
-    // Calculate ring changes
     const ringChanges: RingValues = {
       circularity: newRings.circularity - user.rings.circularity,
       consumption: newRings.consumption - user.rings.consumption,
       mobility: newRings.mobility - user.rings.mobility
     };
     
-    // Calculate new IQ
     const { newIQ, iqChange } = calculateNewIQ(user.IQ, ringChanges, user.rings, verified);
     const newTier = getTierFromIQ(newIQ);
     
-    // Create daily log
     const today = getTodayDate();
     const log: DailyLog = {
       date: today,
@@ -137,7 +145,6 @@ export const useStore = create<AppState>((set, get) => ({
       verified
     };
     
-    // Update user
     const updatedUser = addDailyLog({ ...user }, log);
     updatedUser.IQ = newIQ;
     updatedUser.tier = newTier;
@@ -145,6 +152,7 @@ export const useStore = create<AppState>((set, get) => ({
     
     if (!isDemoMode) {
       saveUser(updatedUser);
+      triggerSync(updatedUser);
     }
     
     set({ user: updatedUser });
@@ -158,7 +166,6 @@ export const useStore = create<AppState>((set, get) => ({
     const { isDemoMode } = get();
     
     if (!isDemoMode) {
-      // Switch to demo mode
       const demoUser = createDemoUser();
       set({ 
         user: demoUser, 
@@ -168,7 +175,6 @@ export const useStore = create<AppState>((set, get) => ({
         leaderboard: generateLeaderboard(demoUser.baseline.city, demoUser.id)
       });
     } else {
-      // Switch back to real user
       clearUser();
       set({ 
         user: null, 

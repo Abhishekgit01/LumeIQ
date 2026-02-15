@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useStore } from '@/store/useStore';
+import { getSession, logout } from '@/lib/localAuth';
 import { AuthScreen } from '@/components/auth/AuthScreen';
 import { OnboardingForm } from '@/components/onboarding/OnboardingForm';
 import { AppShell } from '@/components/layout/AppShell';
-import { FloatingLeaves } from '@/components/ui/LeafDecorations';
 import { DashboardView } from '@/components/views/DashboardView';
 import { InsightsView } from '@/components/views/InsightsView';
 import { ActivitiesView } from '@/components/views/ActivitiesView';
@@ -16,6 +16,8 @@ import { ProfileView } from '@/components/views/ProfileView';
 import { ScanView } from '@/components/views/ScanView';
 import { EcoSpaceView } from '@/components/views/EcoSpaceView';
 import { GreenFinanceView } from '@/components/views/GreenFinanceView';
+import { CouponsView } from '@/components/views/CouponsView';
+import { TransitView } from '@/components/views/TransitView';
 import { LeaderboardList } from '@/components/leaderboard/LeaderboardList';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
@@ -31,24 +33,13 @@ export default function Home() {
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [authChecking, setAuthChecking] = useState(true);
 
-  // Check if user is already logged in via cookie
+  // Check localStorage session on mount
   useEffect(() => {
-    async function checkAuth() {
-      try {
-        const res = await fetch('/api/auth/me');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.user) {
-            setAuthUser(data.user);
-          }
-        }
-      } catch {
-        // Not authenticated
-      } finally {
-        setAuthChecking(false);
-      }
+    const session = getSession();
+    if (session) {
+      setAuthUser(session);
     }
-    checkAuth();
+    setAuthChecking(false);
   }, []);
 
   // Initialize store once authenticated
@@ -58,53 +49,54 @@ export default function Home() {
     }
   }, [authUser, initialize]);
 
-  // Loading state while checking auth
+  // Loading
   if (authChecking) {
     return (
-      <main className="min-h-screen bg-[#f0f7f0] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-[#2d8a4e] animate-spin" />
+      <main className="min-h-screen bg-[var(--ios-bg)] flex items-center justify-center safe-top safe-bottom">
+        <Loader2 className="w-8 h-8 text-[var(--ios-blue)] animate-spin" />
       </main>
     );
   }
 
-  // Not authenticated — show login/signup
+  // Not authenticated
   if (!authUser) {
     return <AuthScreen onAuthenticated={(u) => setAuthUser(u)} />;
   }
 
-  // Authenticated but not onboarded — show onboarding
+  // Authenticated but not onboarded
   if (!hasOnboarded || !user) {
     return (
-      <main className="min-h-screen bg-[#f0f7f0] text-[#1a2e1a] leaf-bg-pattern">
-        <FloatingLeaves />
+      <main className="min-h-screen bg-[var(--ios-bg)] text-[var(--ios-label)] safe-top safe-bottom">
         <OnboardingForm />
       </main>
     );
   }
 
-  // Fully authenticated + onboarded — show app
+  // Fully authenticated + onboarded
   return (
     <AppShell>
       <AnimatePresence mode="wait">
-          {currentView === 'dashboard' && <DashboardView key="dashboard" />}
-          {currentView === 'scan' && <ScanView key="scan" />}
-          {currentView === 'ecospace' && <EcoSpaceView key="ecospace" />}
-          {currentView === 'greenfinance' && <GreenFinanceView key="greenfinance" />}
-          {currentView === 'insights' && <InsightsView key="insights" />}
-          {currentView === 'activities' && <ActivitiesView key="activities" />}
-          {currentView === 'community' && <CommunityView key="community" />}
-          {currentView === 'learn' && <LearnView key="learn" />}
-          {currentView === 'leaderboard' && <LeaderboardLeaderboardView key="leaderboard" leaderboard={leaderboard} />}
-          {currentView === 'profile' && <ProfileView key="profile" />}
-        </AnimatePresence>
+        {currentView === 'dashboard' && <DashboardView key="dashboard" />}
+        {currentView === 'scan' && <ScanView key="scan" />}
+        {currentView === 'ecospace' && <EcoSpaceView key="ecospace" />}
+        {currentView === 'greenfinance' && <GreenFinanceView key="greenfinance" />}
+        {currentView === 'coupons' && <CouponsView key="coupons" />}
+        {currentView === 'transit' && <TransitView key="transit" />}
+        {currentView === 'insights' && <InsightsView key="insights" />}
+        {currentView === 'activities' && <ActivitiesView key="activities" />}
+        {currentView === 'community' && <CommunityView key="community" />}
+        {currentView === 'learn' && <LearnView key="learn" />}
+        {currentView === 'leaderboard' && <LeaderboardView key="leaderboard" leaderboard={leaderboard} />}
+        {currentView === 'profile' && <ProfileView key="profile" />}
+      </AnimatePresence>
     </AppShell>
   );
 }
 
-function LeaderboardLeaderboardView({ leaderboard }: { leaderboard: ReturnType<typeof useStore>['leaderboard'] }) {
+function LeaderboardView({ leaderboard }: { leaderboard: ReturnType<typeof useStore>['leaderboard'] }) {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col">
-      <p className="text-[14px] text-[#5e7a5e] mb-4">Weekly ranking by 7-day rolling IQ</p>
+      <p className="text-[14px] text-[var(--ios-tertiary-label)] mb-4">Weekly ranking by 7-day rolling IQ</p>
       <LeaderboardList users={leaderboard} />
     </motion.div>
   );

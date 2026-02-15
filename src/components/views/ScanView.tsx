@@ -9,6 +9,9 @@ import {
   Recycle, Globe, Wheat, FlaskConical, Shield, Heart, Tag
 } from 'lucide-react';
 import { CardLeaves, SectionHeader, LeafDivider, SmallLeaf, TinyLeaf } from '@/components/ui/LeafDecorations';
+import { useStore } from '@/store/useStore';
+import { useExtensionStore } from '@/store/useExtensionStore';
+import { PurchasePrompt } from '@/components/dashboard/PurchasePrompt';
 
 /* ── Real API data types ── */
 interface NutrientLevels {
@@ -267,6 +270,12 @@ export function ScanView() {
   const scannerRef = useRef<HTMLDivElement>(null);
   const html5QrCodeRef = useRef<any>(null);
 
+  // ─── Purchase Confirmation Integration ───
+  const { user } = useStore();
+  const { handleProductScan, lastScannedProduct, showPurchasePrompt } = useExtensionStore();
+  const [purchaseIqGain, setPurchaseIqGain] = useState(0);
+  const [scanNotice, setScanNotice] = useState<string | null>(null);
+
   const scoreColor = (score: number) =>
     score > 70 ? '#2d8a4e' : score >= 40 ? '#c9a015' : '#d94f4f';
   const scoreLabel = (score: number) =>
@@ -294,6 +303,25 @@ export function ScanView() {
         const productData = parseOpenFoodFactsProduct(data, trimmed);
         setProduct(productData);
         setScanHistory(prev => [{ product: productData, timestamp: new Date() }, ...prev].slice(0, 15));
+
+        // ─── Trigger purchase confirmation flow ───
+        if (user) {
+          const scanResult = handleProductScan(
+            trimmed,
+            productData.name,
+            productData.brand,
+            productData.category,
+            productData.ecoScore,
+            user.id
+          );
+          if (!scanResult.allowed && scanResult.reason) {
+            setScanNotice(scanResult.reason);
+            setTimeout(() => setScanNotice(null), 5000);
+          } else {
+            setScanNotice(null);
+          }
+        }
+
         setLoading(false);
         return;
       }
@@ -1054,6 +1082,38 @@ export function ScanView() {
           </div>
         </>
       )}
+      {/* ═══ Scan Rate Limit Notice ═══ */}
+      <AnimatePresence>
+        {scanNotice && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+            className="fixed top-20 left-4 right-4 z-[90] max-w-[430px] mx-auto p-3 rounded-[12px] bg-[#ff9f0a]/10 border border-[#ff9f0a]/20 text-[13px] text-[#ff9f0a] font-medium text-center shadow-lg backdrop-blur-sm">
+            {scanNotice}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ═══ Purchase Confirmation Prompt ═══ */}
+      {showPurchasePrompt && lastScannedProduct && (
+        <PurchasePrompt
+          product={lastScannedProduct}
+          onDismiss={() => setScanNotice(null)}
+          onPurchaseConfirmed={(iqDelta) => setPurchaseIqGain(iqDelta)}
+        />
+      )}
+
+      {/* ═══ Purchase IQ Gain Toast ═══ */}
+      <AnimatePresence>
+        {purchaseIqGain > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            onAnimationComplete={() => setTimeout(() => setPurchaseIqGain(0), 3000)}
+            className="fixed bottom-24 left-4 right-4 z-[90] max-w-[430px] mx-auto p-3 rounded-[12px] bg-[#30d158]/10 border border-[#30d158]/20 text-center shadow-lg backdrop-blur-sm">
+            <span className="text-[14px] text-[#30d158] font-semibold">🌿 +{purchaseIqGain.toFixed(1)} IQ from sustainable purchase!</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">LumeIQ</string>
+    <string name="title_activity_main">LumeIQ</string>
+    <string name="package_name">com.lumeiq.app</string>
+    <string name="custom_url_scheme">com.lumeiq.app</string>
+</resources>
