@@ -118,19 +118,26 @@ LumeIQ/
 ## 🧠 How It Works (Sustainability Core)
 
 ### Impact Quotient (IQ) Formula
+
+LumeIQ uses a logarithmic growth model to calculate your sustainability score, making it easier to improve early on but harder as you master green living.
+
+```math
+IQ_{new} = IQ_{current} + \left( (100 - IQ_{current}) \times (1 - e^{-k \times BPI}) \right)
 ```
-IQ_new = IQ_current + ((100 - IQ_current) × (1 - exp(-k × BPI)))
-```
-*Your score increases based on positive actions, capped daily to encourage consistency.*
+
+- **BPI (Behavioral Progress Index):** Weighted average of your daily improvements in Mobility (30%), Consumption (35%), and Circularity (35%).
+- **k (Decay Constant):** Difficulty factor that increases as you level up (0.12 → 0.035).
+- **Daily Cap:** Maximum +6 IQ points per day to encourage consistency.
+- **Verification Boost:** **+15% bonus** for actions verified with a photo.
 
 ### Tier System
-| IQ Range | Tier | Status |
-|----------|------|--------|
-| 0-39 | Foundation | Starting Journey |
-| 40-59 | Aware | Conscious Impact |
-| 60-74 | Aligned | Living Sustainably |
-| 75-90 | Progressive | Leading Example |
-| 90+ | Vanguard | Sustainability Champion |
+| IQ Range | Tier | Difficulty (k) | Status |
+| :--- | :--- | :--- | :--- |
+| **0 - 39** | **Foundation** | 0.12 (Easiest) | Starting Journey |
+| **40 - 59** | **Aware** | 0.07 | Conscious Impact |
+| **60 - 74** | **Aligned** | 0.035 | Living Sustainably |
+| **75 - 89** | **Progressive** | 0.035 | Leading Example |
+| **90 - 100** | **Vanguard** | 0.035 (Hardest) | Sustainability Champion |
 
 ---
 
